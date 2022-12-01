@@ -1,0 +1,9 @@
+CREATE TABLE IF NOT EXISTS clues (
+  id integer PRIMARY KEY,
+  category text NOT NULL,
+  clue text NOT NULL,
+  answer text NOT NULL,
+  value integer NOT NULL,
+  round text NOT NULL,
+  date_added text NOT NULL
+)

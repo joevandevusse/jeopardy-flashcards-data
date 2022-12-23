@@ -17,10 +17,7 @@ pp = pprint.PrettyPrinter(indent = 4)
 
 def create_table():
     # Connecting to sqlite
-    # connection object
     connection_obj = sqlite3.connect('jeopardy_clues.db')
-     
-    # cursor object
     cursor_obj = connection_obj.cursor()
      
     # Drop the GEEK table if already exists.
@@ -225,35 +222,17 @@ def replace_quotes(clue_list):
     return clean_clue_list
 
 def main():
-    # SQLite3
-
-    #conn = sqlite3.connect('jeopardy_clues.db')
-    #c = conn.cursor()
-
-    # Test insert
-    #test_row = [0, "test_category", "test_clue", "test_answer", 0, "test_round", "7437", 
-        #"2022-09-18", "2022-09-23"]
-    #c.execute('insert into clues values (?,?,?,?,?,?,?,?)', test_row)
-    #print("Inserted row")
-
-    # Test read
-    #statement = '''SELECT * FROM CLUES'''
-    #c.execute(statement)
-    #print("All the data")
-    #output = c.fetchall()
-    #for row in output:
-        #print(row)
-
     # Command line args
-
-    # Usage: ./store_clues <first game number> <last game number>
-    if len(sys.argv) != 3:
-        print("Usage: ./store_clues<first game number> <last game number>")
+    if len(sys.argv) != 3 and len(sys.argv) != 2:
+        print("Usage: ./store_clues required: <first game number> optional: <last game number>")
         return
 
     # Get clues for each game
     cur_game_number = int(sys.argv[1])
-    max_game_number = int(sys.argv[2])
+    if len(sys.argv) == 3:
+        max_game_number = int(sys.argv[2])
+    else: 
+        max_game_number = cur_game_number
 
     # PostgreSQL
     conn = pgsql.connect(
@@ -269,24 +248,15 @@ def main():
 
     # Get season 39 games from local file
     s39_game_list = []
-    #season_39_first_game = 7430
-    #season_39_tournament_start = 7473
-
-    first = 7519
-    last = 7534
-
     file = open("game_id_to_date.json")
     game_id_to_date = json.load(file)
     for game_id in game_id_to_date.keys():
-        #if int(game_id) >= season_39_first_game and int(game_id) <= season_39_tournament_start:
-        if int(game_id) >= first and int(game_id) <= last:
+        if int(game_id) >= cur_game_number and int(game_id) <= max_game_number:
             s39_game_list.append(int(game_id))
     file.close()
 
     # Get clues from games and insert them into the DB
-    #while cur_game_number <= max_game_number:
     for cur_game_number in s39_game_list:
-        #game_id = 7444
         json_clues = load_clues_from_game(cur_game_number)
         clues = get_clue_list_from_json(json_clues, cur_game_number)
 

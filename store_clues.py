@@ -254,6 +254,7 @@ def main():
         if int(game_id) >= cur_game_number and int(game_id) <= max_game_number:
             s39_game_list.append(int(game_id))
     file.close()
+    print(s39_game_list)
 
     # Get clues from games and insert them into the DB
     for cur_game_number in s39_game_list:

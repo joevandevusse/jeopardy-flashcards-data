@@ -7,3 +7,5 @@ CREATE TABLE IF NOT EXISTS clues (
   round text NOT NULL,
   date_added text NOT NULL
 )
+
+Idea - take all clues, parse them out, grab proper nouns and see frequency

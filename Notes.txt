@@ -1,0 +1,1 @@
+Idea - take all clues, parse them out, grab proper nouns and see frequency

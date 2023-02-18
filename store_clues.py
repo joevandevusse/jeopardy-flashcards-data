@@ -13,45 +13,47 @@ from datetime import date
 import psycopg2 as pgsql
 
 # Initialize pretty printer
-pp = pprint.PrettyPrinter(indent = 4)
+pp = pprint.PrettyPrinter(indent=4)
 
-def create_table():
-    # Connecting to sqlite
-    connection_obj = sqlite3.connect('jeopardy_clues.db')
-    cursor_obj = connection_obj.cursor()
-     
-    # Drop the GEEK table if already exists.
-    cursor_obj.execute("DROP TABLE IF EXISTS CLUES")
-     
-    # Creating table
-    table = """ CREATE TABLE CLUES (
-                ID INT PRIMARY KEY,
-                CATEGORY VARCHAR(100) NOT NULL,
-                CLUE VARCHAR(1000) NOT NULL,
-                ANSWER VARCHAR(100) NOT NULL,
-                VALUE INT NOT NULL,
-                ROUND TEXT NOT NULL,
-                DATE_ADDED TEXT NOT NULL
-            ); """
-     
-    cursor_obj.execute(table)
-     
-    print("Table is Ready")
-     
-    # Close the connection
-    connection_obj.close()
+
+# def create_table():
+#     # Connecting to sqlite
+#     connection_obj = sqlite3.connect('jeopardy_clues.db')
+#     cursor_obj = connection_obj.cursor()
+#
+#     # Drop the GEEK table if already exists.
+#     cursor_obj.execute("DROP TABLE IF EXISTS CLUES")
+#
+#     # Creating table
+#     table = """ CREATE TABLE CLUES (
+#                 ID INT PRIMARY KEY,
+#                 CATEGORY VARCHAR(100) NOT NULL,
+#                 CLUE VARCHAR(1000) NOT NULL,
+#                 ANSWER VARCHAR(100) NOT NULL,
+#                 VALUE INT NOT NULL,
+#                 ROUND TEXT NOT NULL,
+#                 DATE_ADDED TEXT NOT NULL
+#             ); """
+#
+#     cursor_obj.execute(table)
+#
+#     print("Table is Ready")
+#
+#     # Close the connection
+#     connection_obj.close()
 
 
 def load_clues_from_game(game_number):
     print(game_number)
     # JSON to return
-    game_JSON = {}
-    game_JSON["categories_sj"] = []
-    game_JSON["categories_dj"] = []
-    game_JSON["categories_fj"] = []
-    game_JSON["clues_sj"] = {}
-    game_JSON["clues_dj"] = {}
-    game_JSON["clues_fj"] = {}
+    game_json = {
+        "categories_sj": [],
+        "categories_dj": [],
+        "categories_fj": [],
+        "clues_sj": {},
+        "clues_dj": {},
+        "clues_fj": {}
+    }
 
     # J! Archive URL
     url = "http://j-archive.com/showgame.php?game_id=" + str(game_number)
@@ -76,12 +78,12 @@ def load_clues_from_game(game_number):
         cateogory_to_append["clues"] = [category_counter_str + "-0", category_counter_str + "-1",
             category_counter_str + "-2", category_counter_str + "-3", category_counter_str + "-4"]
         if category_counter < 6:
-            game_JSON["categories_sj"].append(cateogory_to_append)
+            game_json["categories_sj"].append(cateogory_to_append)
         elif category_counter < 12:
-            game_JSON["categories_dj"].append(cateogory_to_append)
+            game_json["categories_dj"].append(cateogory_to_append)
         else:
             cateogory_to_append["clues"] = ["0-0"]
-            game_JSON["categories_fj"].append(cateogory_to_append)
+            game_json["categories_fj"].append(cateogory_to_append)
         category_counter += 1
 
     # Get clue attrs
@@ -89,11 +91,11 @@ def load_clues_from_game(game_number):
 
     # Extract text, id, value, and answer from the clue
     clue_questions = [clue.findAll("td", {"class": "clue_text"})[0].getText() 
-        for clue in clues if clue.div is not None]
+                      for clue in clues if clue.div is not None]
     clue_ids = [clue.div.findAll("td", {"class": "clue_unstuck"})[0]['id'] for clue in clues
-        if clue.div is not None and len(clue.div.findAll("td", {"class": "clue_unstuck"})) > 0]
-    clue_answers = [clue.div['onmouseover'].split("correct_response\">")[1].split("</em>")[0] for clue in clues
-        if clue.div is not None]
+                if clue.div is not None and len(clue.div.findAll("td", {"class": "clue_unstuck"})) > 0]
+    clue_answers = [clue.div['onmouseover'].split("correct_response\">")[1].split("</em>")[0]
+                    for clue in clues if clue.div is not None]
 
     clean_clue_answers = []
     for answer in clue_answers:
@@ -133,7 +135,7 @@ def load_clues_from_game(game_number):
                 add_clue_sj["answer"] = clean_clue_answers[i]
             add_clue_sj["value"] = (math.floor(i / 6) + 1) * 200
             add_clue_sj["is_dd"] = False
-            game_JSON["clues_sj"][row_str + "-" + col_str] = add_clue_sj
+            game_json["clues_sj"][row_str + "-" + col_str] = add_clue_sj
         else:
             col_str = str((math.floor(i / 6) - 5))
             add_clue_dj = {}
@@ -145,17 +147,18 @@ def load_clues_from_game(game_number):
                 add_clue_dj["answer"] = clean_clue_answers[i]
             add_clue_dj["value"] = (math.floor((i - 30) / 6) + 1) * 400
             add_clue_dj["is_dd"] = False
-            game_JSON["clues_dj"][row_str + "-" + col_str] = add_clue_dj
+            game_json["clues_dj"][row_str + "-" + col_str] = add_clue_dj
 
     # Handle final jeopardy separately
     final_jeopardy = page_soup.findAll("table", {"class": "final_round"})[0]
-    add_clue_fj = {}
-    add_clue_fj["question"] = page_soup.findAll("td", {"id": "clue_FJ"})[0].getText()
-    add_clue_fj["answer"] = final_jeopardy.div['onmouseover'].split("correct_response")[1].split("</em>")[0][3:]
-    add_clue_fj["value"] = 10000
-    add_clue_fj["is_dd"] = False
-    game_JSON["clues_fj"]["0-0"] = add_clue_fj
-    return game_JSON
+    add_clue_fj = {
+        "question": page_soup.findAll("td", {"id": "clue_FJ"})[0].getText(),
+        "answer": final_jeopardy.div['onmouseover'].split("correct_response")[1].split("</em>")[0][3:],
+        "value": 10000,
+        "is_dd": False}
+    game_json["clues_fj"]["0-0"] = add_clue_fj
+    return game_json
+
 
 def get_clue_list_from_json(clues_json, game_id):
     today = date.today()
@@ -181,7 +184,7 @@ def get_clue_list_from_json(clues_json, game_id):
                 break
         sql_id = str(uuid.uuid4())
         clue = [sql_id, category, clue_info["question"], clue_info["answer"], int(clue_info["value"]), 
-            "Jeopardy", game_id, game_id_to_date[str(game_id)], today.strftime("%Y-%m-%d"), 0, 0]
+                "Jeopardy", game_id, game_id_to_date[str(game_id)], today.strftime("%Y-%m-%d"), 0, 0]
         clues.append(clue)
 
     # Double Jeopardy
@@ -194,7 +197,7 @@ def get_clue_list_from_json(clues_json, game_id):
                 break
         sql_id = str(uuid.uuid4())
         clue = [sql_id, category, clue_info["question"], clue_info["answer"], int(clue_info["value"]), 
-            "Double", game_id, game_id_to_date[str(game_id)], today.strftime("%Y-%m-%d"), 0, 0]
+                "Double", game_id, game_id_to_date[str(game_id)], today.strftime("%Y-%m-%d"), 0, 0]
         clues.append(clue)
 
     # Final Jeopardy
@@ -202,10 +205,11 @@ def get_clue_list_from_json(clues_json, game_id):
     final_clue_info = clues_fj["0-0"]
     final_sql_id = str(uuid.uuid4())
     final_clue = [final_sql_id, final_category, final_clue_info["question"], final_clue_info["answer"], 0, 
-        "Final", game_id, game_id_to_date[str(game_id)], today.strftime("%Y-%m-%d"), 0, 0]
+                  "Final", game_id, game_id_to_date[str(game_id)], today.strftime("%Y-%m-%d"), 0, 0]
     clues.append(final_clue)
     clues = replace_quotes(clues)
     return clues
+
 
 def replace_quotes(clue_list):
     single_quote = "'"
@@ -214,12 +218,14 @@ def replace_quotes(clue_list):
     for clue in clue_list:
         clean_clue = []
         for clue_piece in clue:
-            if isinstance(clue_piece, str) == True and (single_quote in clue_piece or double_quote in clue_piece):
+            if isinstance(clue_piece, str) is True \
+                    and (single_quote in clue_piece or double_quote in clue_piece):
                 clue_piece = clue_piece.replace('"', '""')
                 clue_piece = clue_piece.replace("'", "''")
             clean_clue.append(clue_piece)
         clean_clue_list.append(clean_clue)
     return clean_clue_list
+
 
 def main():
     # Command line args
@@ -236,11 +242,11 @@ def main():
 
     # PostgreSQL
     conn = pgsql.connect(
-        database = "joevandevusse", 
-        user = "joevandevusse",
-        password = "whombovb2508", 
-        host =  "127.0.0.1",
-        port = "5432"
+        database="joevandevusse",
+        user="joevandevusse",
+        password="whombovb2508",
+        host="127.0.0.1",
+        port="5432"
     )
     conn.autocommit = True
     cursor = conn.cursor()
@@ -251,7 +257,7 @@ def main():
     file = open("game_id_to_date.json")
     game_id_to_date = json.load(file)
     for game_id in game_id_to_date.keys():
-        if int(game_id) >= cur_game_number and int(game_id) <= max_game_number:
+        if cur_game_number <= int(game_id) <= max_game_number:
             s39_game_list.append(int(game_id))
     file.close()
     print(s39_game_list)
@@ -275,6 +281,7 @@ def main():
 
     cursor.close()
     conn.close()
+
 
 if __name__ == "__main__":
     main()

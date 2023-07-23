@@ -94,7 +94,7 @@ def load_clues_from_game(game_number):
                       for clue in clues if clue.div is not None]
     clue_ids = [clue.div.findAll("td", {"class": "clue_unstuck"})[0]['id'] for clue in clues
                 if clue.div is not None and len(clue.div.findAll("td", {"class": "clue_unstuck"})) > 0]
-    clue_answers = [clue.div['onmouseover'].split("correct_response\">")[1].split("</em>")[0]
+    clue_answers = [str(clue).split("correct_response\">")[1].split("</em>")[0]
                     for clue in clues if clue.div is not None]
 
     clean_clue_answers = []
@@ -153,7 +153,7 @@ def load_clues_from_game(game_number):
     final_jeopardy = page_soup.findAll("table", {"class": "final_round"})[0]
     add_clue_fj = {
         "question": page_soup.findAll("td", {"id": "clue_FJ"})[0].getText(),
-        "answer": final_jeopardy.div['onmouseover'].split("correct_response")[1].split("</em>")[0][3:],
+        "answer": str(final_jeopardy).split("correct_response")[1].split("</em>")[0][3:],
         "value": 10000,
         "is_dd": False}
     game_json["clues_fj"]["0-0"] = add_clue_fj

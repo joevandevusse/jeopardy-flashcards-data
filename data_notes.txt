@@ -9,3 +9,4 @@ CREATE TABLE IF NOT EXISTS clues (
 )
 
 Idea - take all clues, parse them out, grab proper nouns and see frequency
+Proper nouns or just all words/phrases and sort

@@ -1,11 +1,19 @@
+-- Select all
 select * from clues;
 
+-- Count all
 select count(*) from clues;
-INSERT INTO clues (category, clue, answer, dollar_value, round, game_id, game_date, added_date) values ('GOING HOME','The Internet loves videos of these people coming home & reuniting with their dogs, like Hannah Foraker with Buddy','soldiers',200,'Jeopardy',7444,'2022-09-23','2022-09-25');
 
+-- Insert a clue
+INSERT INTO clues (category, clue, answer, dollar_value, round, game_id, game_date, added_date)
+values ('GOING HOME','The Internet loves videos of these people coming home & reuniting with their dogs,
+like 'Hannah Foraker with Buddy','soldiers',200,'Jeopardy',7444,'2022-09-23','2022-09-25');
+
+-- Delete all
 delete from clues;
 
-select * from clues where clue like '%bishop%';
+-- Find something specific
+select * from clues where upper(clue) like upper('%bishop%');
 select * from clues where category like '%BOOK%';
 
 -- Get most recent game to store new ones
@@ -23,3 +31,5 @@ group by answer
 order by count(answer) desc;
 
 select count(distinct game_id) from clues;
+
+select clue, answer from clues limit 10;
